@@ -11,19 +11,15 @@ def load_ml_stack():
     """Safely handles unpickling mechanics within server memory threads"""
     artifact_path = "innovexa_traffic_stack.pkl"
     if not os.path.exists(artifact_path):
-        print("⚠️ Warning: innovexa_traffic_stack.pkl file is missing from root folder.")
         return None
     try:
-        # Explicitly importing dependencies inside the thread runner to resolve gunicorn race states
         import lightgbm
         import xgboost
         with open(artifact_path, "rb") as f:
             return pickle.load(f)
     except Exception as e:
-        print(f"⚠️ Warning: Pickling initialization bypassed, running high-fidelity rule engine fallbacks. Core Error: {e}")
         return None
 
-# Attempt to load the model stack safely into the container runtime
 stack = load_ml_stack()
 
 # --- PREMIUM STYLED DASHBOARD UI ---
@@ -167,7 +163,6 @@ DASHBOARD_HTML = """
     <div class="container mb-5" style="max-width: 1140px;">
         <div class="row g-4">
             
-            <!-- Left Panel Form Inputs -->
             <div class="col-lg-5">
                 <div class="card p-4 h-100">
                     <h5 class="fw-bold mb-4 text-dark">Workspace Parameters</h5>
@@ -211,7 +206,6 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
-            <!-- Right Panel Output Telemetry -->
             <div class="col-lg-7">
                 <div class="d-flex flex-column h-100 justify-content-between gap-4">
                     
@@ -239,3 +233,11 @@ DASHBOARD_HTML = """
                                     <div class="nested-metric-label">Surge Ceiling Buffer</div>
                                     <div class="nested-metric-value mt-1" id="bufferOut">0</div>
                                 </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary small fw-medium">Capacity Utilization Threshold</span>
+                            <span class="fw-bold small" id="progressPct">0%</span>
+                        </div>
+                        <div class="progress">
