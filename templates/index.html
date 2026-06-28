@@ -2,139 +2,246 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Intelligent Traffic Demand Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Traffic Analytics Dashboard</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { font-family: system-ui, sans-serif; background: #f1f5f9; padding: 20px; color: #1e293b; margin: 0; }
-        .box { max-width: 800px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
-        h2 { color: #0f172a; margin-top:0; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .form { display: flex; flex-direction: column; }
-        label { font-weight: 600; margin-bottom: 6px; font-size: 13px; color: #475569; }
-        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
-        button { grid-column: span 2; padding: 14px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 15px; font-weight: 700; cursor: pointer; text-transform: uppercase; }
-        button:hover { background: #1d4ed8; }
-        .panel { display: none; margin-top: 25px; }
-        .score { background: #f8fafc; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
-        .val { font-size: 32px; font-weight: 800; color: #0f172a; }
-        .badge { padding: 6px 12px; border-radius: 15px; font-weight: 700; font-size: 13px; text-transform: uppercase; color: #fff; }
-        .b-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; background: #fff; }
-        .p-bg { background: #e2e8f0; border-radius: 5px; height: 12px; margin-top: 8px; overflow: hidden; }
-        .p-fill { height: 100%; background: #3b82f6; width: 0%; transition: width 0.4s; }
-        .rec { padding: 12px; border-radius: 6px; font-weight: 600; font-size: 13px; margin-top: 5px; }
-        .rec-clear { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .rec-divert { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        :root {
+            --bg-main: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --accent-bg: #f1f5f9;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+        .navbar {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            padding: 28px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 0.95rem;
+            background-color: #fff;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .metric-value {
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+        .nested-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .nested-card {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .nested-card-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .nested-card-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .progress-wrapper {
+            margin-top: 12px;
+        }
+        .progress {
+            background-color: #e2e8f0;
+            border-radius: 999px;
+            height: 10px !important;
+        }
+        .progress-bar {
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+        .recommendation-box {
+            border-left: 4px solid var(--primary);
+            background-color: #eff6ff;
+            border-radius: 0 12px 12px 0;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
-<div class="box">
-    <h2>🚦 Intelligent Live Traffic Management Dashboard</h2>
-    <div class="grid">
-        <div class="form"><label>Hour of Day (0-23)</label><input type="number" id="h" value="3"></div>
-        <div class="form">
-            <label>Road Classification</label>
-            <select id="r">
-                <option value="highway">Express Highway</option>
-                <option value="arterial">Major Arterial</option>
-            </select>
+
+    <nav class="navbar mb-5">
+        <div class="container">
+            <span class="navbar-brand text-dark d-flex align-items-center">
+                <span class="me-2">🚦</span> Innovexa Catalyst Control Center
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 fw-semibold rounded-pill">
+                ● Connected to Live Engine Stream
+            </span>
         </div>
-        <div class="form"><label>Active Lanes</label><input type="number" id="l" value="4"></div>
-        <div class="form">
-            <label>Weather State</label>
-            <select id="w">
-                <option value="rainy">Active Rainfall</option>
-                <option value="clear">Clear Conditions</option>
-            </select>
-        </div>
-        <div class="form"><label>Lag 1 Traffic Volume</label><input type="number" id="l1" value="25"></div>
-        <div class="form"><label>Lag 2 Traffic Volume</label><input type="number" id="l2" value="30"></div>
-        <button onclick="run()">Execute Stacking Analytics</button>
-    </div>
-    
-    <div id="p" class="panel">
-        <div class="score">
-            <div><strong>Ensemble Forecasted Volume:</strong><div id="vc" class="val">0</div></div>
-            <div><span id="bd" class="badge">-</span></div>
-        </div>
-        <div class="b-grid">
-            <div class="card">
-                <strong>📊 Capacity Analytics Matrix</strong>
-                <div style="font-size:13px; margin-top:5px;">PCU Equivalency: <strong id="pc">0</strong></div>
-                <div style="font-size:13px; margin-top:3px;">Surge Ceiling Buffer: <strong id="up" style="color:#ef4444;">0</strong></div>
-                <div class="p-bg"><div id="bar" class="p-fill"></div></div>
-                <span id="pct" style="font-size:11px; float:right; margin-top:4px; font-weight:600;">0%</span>
+    </nav>
+
+    <div class="container mb-5" style="max-width: 1140px;">
+        <div class="row g-4">
+            
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="section-title">⚙️ Configuration Framework</div>
+                    <form id="trafficForm" class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Hour of Day (0-23)</label>
+                            <input type="number" class="form-control" name="hour" value="10" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Road Classification</label>
+                            <select class="form-select" name="road_classification">
+                                <option value="Express Highway">Express Highway</option>
+                                <option value="Arterial Route">Arterial Route</option>
+                                <option value="Urban Commuter Route">Urban Commuter Route</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Active Lanes</label>
+                            <input type="number" class="form-control" name="active_lanes" value="4" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Weather State</label>
+                            <select class="form-select" name="weather_state">
+                                <option value="Clear Skies">Clear Skies</option>
+                                <option value="Active Rainfall">Active Rainfall</option>
+                                <option value="Heavy Storms">Heavy Storms</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Lag 1 Volume (T-15m)</label>
+                            <input type="number" class="form-control" name="lag_1" value="210" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Lag 2 Volume (T-30m)</label>
+                            <input type="number" class="form-control" name="lag_2" value="195" required>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary w-100">Execute Stacking Ensemble</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="card"><strong>🧠 Smart Routing Recommendation</strong><div id="rc" class="rec">Analyzing Data Streams...</div></div>
+            
+            <div class="col-lg-7">
+                <div class="card d-flex flex-column justify-content-center" style="min-height: 155px;">
+                    <span class="metric-title">Ensemble Forecasted Traffic Volume</span>
+                    <div class="d-flex align-items-baseline gap-2 mt-1">
+                        <div class="metric-value text-primary" id="volOut">0</div>
+                        <span class="text-secondary fw-semibold fs-5">vehicles / 15-min</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">📊 Capacity Analytics Matrix</div>
+                    <div class="nested-grid">
+                        <div class="nested-card">
+                            <div class="nested-card-title">PCU Equivalency</div>
+                            <div class="nested-card-value" id="pcuOut">0</div>
+                        </div>
+                        <div class="nested-card">
+                            <div class="nested-card-title">Surge Ceiling Buffer</div>
+                            <div class="nested-card-value" id="bufferOut">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary small fw-medium">Network Saturation Index</span>
+                            <span class="fw-bold small" id="progressPct">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card m-0">
+                    <div class="section-title">🧠 Smart Routing Recommendation</div>
+                    <div class="recommendation-box" id="recBox">
+                        <p class="mb-0 text-secondary" id="routingOut">
+                            System idle. Submit workspace parameters to initialize recommendations...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-</div>
 
-<script>
-function run() {
-    // FORCE DIRECT DOM PARSING FOR ALL ACTIVE INPUTS
-    var inputHour = parseInt(document.getElementById('h').value);
-    var inputLanes = parseInt(document.getElementById('l').value);
-    var roadSel = document.getElementById('r').value;
-    var weatherSel = document.getElementById('w').value;
-    var inputLag1 = parseFloat(document.getElementById('l1').value);
-    var inputLag2 = parseFloat(document.getElementById('l2').value);
-
-    // Calculate dynamic temporal mappings explicitly
-    var isRush = (inputHour >= 7 && inputHour <= 9) || (inputHour >= 17 && inputHour <= 19) ? 1 : 0;
-    var rainVal = weatherSel === 'rainy' ? 2.0 : 0.0;
-    var visVal = weatherSel === 'rainy' ? 4.0 : 10.0;
-
-    var payload = {
-        "Hour": inputHour, "Minute": 0, "Day of Week": 5, "Is_Weekend": 1, "Month": 6,
-        "Road Segment ID": 5, "Number of Lanes": inputLanes, "Speed Limit": roadSel === 'highway' ? 100 : 60,
-        "Nearby Intersections": 1, "Nearby POI Density": 0.2, "Temperature": 16.0, "Humidity": 85.0,
-        "Rainfall": rainVal, "Visibility": visVal, "Wind Speed": 18.0, "Event/Holiday": 0,
-        "Is_Rush_Hour": isRush, "Historical Avg Speed": 90.0, "Congestion Index": 0.1, "Traffic Signals": 1,
-        "Hour_sin": Math.sin(2 * Math.PI * inputHour / 24.0), "Hour_cos": Math.cos(2 * Math.PI * inputHour / 24.0),
-        "DayOfWeek_sin": -0.9749, "DayOfWeek_cos": -0.2225, "Month_sin": 0.0, "Month_cos": -1.0,
-        "Traffic_Lag_1": inputLag1, "Traffic_Lag_2": inputLag2, 
-        "Traffic_Lag_3": inputLag1 * 0.9, "Traffic_Lag_4": inputLag2 * 0.9, "Traffic_Lag_6": 40.0, "Traffic_Lag_12": 50.0,
-        "Traffic_Roll_Mean_3": (inputLag1 + inputLag2 + 35) / 3, "Traffic_Roll_Std_3": 5.0, 
-        "Traffic_Roll_Mean_6": 40.0, "Traffic_Roll_Std_6": 8.0,
-        "Traffic_Roll_Mean_12": 50.0, "Traffic_Roll_Std_12": 12.0, "Traffic_Roll_Mean_24": 65.0, "Traffic_Roll_Std_24": 15.0,
-        "Peak_Hour_Indicator": isRush, "Rush_Hour_Score": isRush * 1.5, "Weather_Impact_Score": (rainVal * 2) + (10 - visVal),
-        "Road Type_Highway": roadSel === 'highway' ? 1 : 0, "Road Type_Local": 0,
-        "Weather Condition_Overcast": 0, "Weather Condition_Rainy": weatherSel === 'rainy' ? 1 : 0, "Weather Condition_Stormy": 0
-    };
-
-    fetch('/api/analytics?cb=' + new Date().getTime(), { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-    })
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById('p').style.display = 'block';
-        var count = data.predictions_summary.expected_vehicle_volume;
-        
-        document.getElementById('vc').innerText = count + " Vehicles";
-        document.getElementById('pc').innerText = data.predictions_summary.passenger_car_units_pcu;
-        document.getElementById('up').innerText = data.predictions_summary.upper_bound_buffer_15m;
-        
-        var pct = data.infrastructure_capacity_percentage;
-        document.getElementById('pct').innerText = pct + '%';
-        document.getElementById('bar').style.width = pct + '%';
-        document.getElementById('bar').style.backgroundColor = pct > 80 ? '#ef4444' : (pct > 40 ? '#f59e0b' : '#3b82f6');
-        
-        var bd = document.getElementById('bd'), rc = document.getElementById('rc');
-        var density = count / inputLanes;
-        if(density < 25) {
-            bd.style.background = '#dcfce7'; bd.style.color = '#166534'; bd.innerText = 'Light Flow';
-            rc.className = 'rec rec-clear'; rc.innerText = '✅ STATUS NORMAL: Channels clearing smoothly.';
-        } else if(density < 50) {
-            bd.style.background = '#fef9c3'; bd.style.color = '#854d0e'; bd.innerText = 'Moderate Volume';
-            rc.className = 'rec rec-clear'; rc.innerText = '✅ STATUS NORMAL: Channels clearing smoothly.';
-        } else {
-            bd.style.background = '#fee2e2'; bd.style.color = '#991b1b'; bd.innerText = 'Severe Gridlock';
-            rc.className = 'rec rec-divert'; rc.innerText = '⚠️ ACTION REQUIRED: Saturated limits. Route divergence recommended.';
-        }
-    });
-}
-</script>
-</body>
-</html>
+    <script>
+        document.getElementById('trafficForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const payload = Object.fromEntries(new FormData(e.target).entries());
+            
+            const res = await fetch('/api/predict', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify(payload)
