@@ -37,7 +37,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             margin-bottom: 24px;
             padding: 28px;
         }
@@ -71,6 +71,7 @@
             border-radius: 10px;
             padding: 14px;
             font-weight: 600;
+            letter-spacing: 0.3px;
             text-transform: uppercase;
             font-size: 0.9rem;
         }
@@ -132,6 +133,12 @@
             border-radius: 0 12px 12px 0;
             padding: 20px;
         }
+        .recommendation-text {
+            margin: 0;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
@@ -142,7 +149,7 @@
                 <span class="me-2">🚦</span> Innovexa Catalyst Control Center
             </span>
             <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 fw-semibold rounded-pill">
-                ● Live Streaming Active
+                ● Live Streaming Telemetry Active
             </span>
         </div>
     </nav>
@@ -150,17 +157,18 @@
     <div class="container mb-5" style="max-width: 1140px;">
         <div class="row g-4">
             
+            <!-- Left Layout Controls (With Direct ID Hooks Added to Elements) -->
             <div class="col-lg-5">
                 <div class="card">
                     <div class="section-title">⚙️ Configuration Framework</div>
                     <form id="trafficForm" class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Hour of Day (0-23)</label>
-                            <input type="number" class="form-control" id="hourInput" value="10" required>
+                            <input type="number" class="form-control" id="hour_field" min="0" max="23" value="10" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Road Classification</label>
-                            <select class="form-select" id="roadInput">
+                            <select class="form-select" id="road_field">
                                 <option value="Express Highway">Express Highway</option>
                                 <option value="Arterial Route">Arterial Route</option>
                                 <option value="Urban Commuter Route">Urban Commuter Route</option>
@@ -168,11 +176,11 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Active Lanes</label>
-                            <input type="number" class="form-control" id="lanesInput" value="4" required>
+                            <input type="number" class="form-control" id="lanes_field" min="1" max="10" value="4" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Weather State</label>
-                            <select class="form-select" id="weatherInput">
+                            <select class="form-select" id="weather_field">
                                 <option value="Clear Skies">Clear Skies</option>
                                 <option value="Active Rainfall">Active Rainfall</option>
                                 <option value="Heavy Storms">Heavy Storms</option>
@@ -180,11 +188,11 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label">Lag 1 Volume (T-15m)</label>
-                            <input type="number" class="form-control" id="lag1Input" value="210" required>
+                            <input type="number" class="form-control" id="lag1_field" value="210" required>
                         </div>
                         <div class="col-6">
                             <label class="form-label">Lag 2 Volume (T-30m)</label>
-                            <input type="number" class="form-control" id="lag2Input" value="195" required>
+                            <input type="number" class="form-control" id="lag2_field" value="195" required>
                         </div>
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-primary w-100">Execute Stacking Ensemble</button>
@@ -193,6 +201,7 @@
                 </div>
             </div>
             
+            <!-- Right Layout Outputs -->
             <div class="col-lg-7">
                 <div class="card d-flex flex-column justify-content-center" style="min-height: 155px;">
                     <span class="metric-title">Ensemble Forecasted Traffic Volume</span>
@@ -229,20 +238,7 @@
                 <div class="card m-0">
                     <div class="section-title">🧠 Smart Routing Recommendation</div>
                     <div class="recommendation-box" id="recBox">
-                        <p class="mb-0 text-secondary" id="routingOut">
-                            System idle. Submit parameters to compute live recommendations...
+                        <p class="recommendation-text text-secondary" id="routingOut">
+                            System idle. Submit workspace parameters to initialize recommendations...
                         </p>
                     </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        document.getElementById('trafficForm').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            // Hardcoded direct payload construction mapping
-            const payload = {
-                hour: document.getElementById('hourInput').value,
