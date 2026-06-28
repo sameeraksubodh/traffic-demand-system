@@ -1,10 +1,11 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template
+import pandas as pd
 import numpy as np
-import datetime
+import pickle, os
 
-app = Flask(__name__)
+# Configure application template reading options
+app = Flask(__name__, template_folder='templates')
 
-# Mock Data Store to support Section 7 endpoints natively
 ROAD_SEGMENTS_METADATA = [
     {"segment_id": 101, "name": "Core Highway Arterial (Segment 101)", "lanes": 4, "speed_limit": 100},
     {"segment_id": 102, "name": "Urban Commuter Route (Segment 102)", "lanes": 3, "speed_limit": 80},
@@ -18,120 +19,34 @@ SYSTEM_STATS = {
     "max_peak_volume_detected": 1142
 }
 
-# --- FULLY COMPLIANT PREMIUM INTERFACE LAYOUT ---
-DASHBOARD_UI = """
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Intelligent Traffic Analytics Dashboard</title>
-<link href="https://jsdelivr.net" rel="stylesheet">
-<link href="https://googleapis.com" rel="stylesheet">
-<style>
-:root { --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --border: #e2e8f0; --primary: #2563eb; }
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
-.navbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 0; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 24px; }
-.form-label { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
-.form-control, .form-select { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-.btn-primary { background: var(--primary); border: none; border-radius: 10px; padding: 12px; font-weight: 600; text-transform: uppercase; }
-.metric-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); line-height: 1; }
-.nested-metric { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
-.recommendation-box { border-left: 4px solid var(--primary); background: #eff6ff; padding: 16px; border-radius: 0 12px 12px 0; }
-</style></head>
-<body class="py-4">
-    <nav class="navbar navbar-light bg-white border-bottom mb-5"><div class="container fw-bold fs-5">🚦 INNOVEXA CATALYST TRAFFIC INTELLIGENCE MANAGEMENT SYSTEM</div></nav>
-    <div class="container">
-        <div style="display: flex; flex-direction: row; gap: 24px; align-items: stretch; flex-wrap: wrap;">
-            
-            <!-- Left Side Inputs Form (Fulfilling Section 7 UI Specifications) -->
-            <div style="flex: 1 1 380px; max-width: 440px;">
-                <div class="card p-4 h-100">
-                    <h5 class="fw-bold mb-4">Workspace Parameters</h5>
-                    <form id="trafficForm" class="row g-3">
-                        <div class="col-12"><label class="form-label">Road Segment Selection</label><select class="form-select" id="segment_field"><option value="101">Segment 101 - Core Highway</option><option value="102">Segment 102 - Urban Commuter</option><option value="103">Segment 103 - Commercial Center</option><option value="104">Segment 104 - Logistics Gateway</option></select></div>
-                        <div class="col-12"><label class="form-label">Date & Time Picker</label><input type="datetime-local" class="form-control" id="time_field" required></div>
-                        <div class="col-12"><label class="form-label">Weather Input State</label><select class="form-select" id="weather_field"><option value="Clear Skies">Clear Skies</option><option value="Active Rainfall">Active Rainfall</option><option value="Heavy Storms">Heavy Storms</option></select></div>
-                        <div class="col-12"><label class="form-label">Special Event / Holiday Input</label><select class="form-select" id="event_field"><option value="0">Standard Schedule Day</option><option value="1">Active Event Area / Holiday</option></select></div>
-                        <div class="col-6"><label class="form-label">Lag 1 (T-15m)</label><input type="number" class="form-control" id="lag1_field" value="210" required></div>
-                        <div class="col-6"><label class="form-label">Lag 2 (T-30m)</label><input type="number" class="form-control" id="lag2_field" value="195" required></div>
-                        <div class="col-12 mt-4"><button type="submit" class="btn btn-primary w-100">Execute Stacking Ensemble</button></div>
-                    </form>
-                </div>
-            </div>
+def load_ml_stack():
+    artifact_path = "innovexa_traffic_stack.pkl"
+    if not os.path.exists(artifact_path): return None
+    try:
+        import lightgbm, xgboost
+        with open(artifact_path, "rb") as f: return pickle.load(f)
+    except: return None
 
-            <!-- Right Side Visual Output Cards -->
-            <div style="flex: 2 1 500px; display: flex; flex-direction: column; gap: 24px;">
-                <div class="card p-4 d-flex flex-column justify-content-center" style="min-height: 130px;">
-                    <span class="small fw-bold text-muted text-uppercase">Ensemble Forecasted Volume</span>
-                    <div class="d-flex align-items-baseline gap-2 mt-2"><div class="metric-value" id="volOut">0</div><span class="text-secondary fw-semibold">vehicles / 15-min</span></div>
-                </div>
-                <div class="card p-4">
-                    <h6 class="fw-bold mb-3 text-dark">📊 Capacity Analytics Matrix</h6>
-                    <div class="row g-3 mb-4">
-                        <div class="col-6"><div class="nested-metric"><small class="text-muted fw-bold text-uppercase" style="font-size:0.75rem;">Equivalent Car Space</small><div class="fw-bold fs-5 mt-1" id="pcuOut">0</div></div></div>
-                        <div class="col-6"><div class="nested-metric"><small class="text-muted fw-bold text-uppercase" style="font-size:0.75rem;">Remaining Road Space</small><div class="fw-bold fs-5 mt-1" id="bufferOut">0</div></div></div>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2"><span class="text-secondary small fw-medium">Road Capacity Used</span><span class="fw-bold small" id="progressPct">0%</span></div>
-                    <div class="progress" style="height: 10px;"><div class="progress-bar bg-primary" id="progressFill" style="width:0%"></div></div>
-                </div>
-                <div class="card p-4">
-                    <h6 class="fw-bold mb-3 text-dark">🧠 Smart Routing Recommendation</h6>
-                    <div class="recommendation-box" id="recBox"><p class="mb-0 text-secondary small font-weight-medium" id="routingOut">Waiting for data submission...</p></div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-    <script>
-        document.getElementById('time_field').value = new Date().toISOString().slice(0,16);
-        document.getElementById('trafficForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const payload = {
-                segment_id: document.getElementById('segment_field').value,
-                timestamp: document.getElementById('time_field').value,
-                weather_state: document.getElementById('weather_field').value,
-                event_holiday: document.getElementById('event_field').value,
-                lag_1: document.getElementById('lag1_field').value,
-                lag_2: document.getElementById('lag2_field').value
-            };
-            const res = await fetch('/api/predict', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            const d = await res.json();
-            document.getElementById('volOut').innerText = d.predicted_vehicle_count;
-            document.getElementById('pcuOut').innerText = d.pcu_equivalency;
-            document.getElementById('bufferOut').innerText = d.surge_ceiling_buffer;
-            const pct = Math.min(Math.round((d.predicted_vehicle_count / d.total_capacity) * 100), 100);
-            document.getElementById('progressPct').innerText = pct + "%";
-            const pb = document.getElementById('progressFill'); pb.style.width = pct + "%";
-            const rb = document.getElementById('recBox'); const rt = document.getElementById('routingOut'); rt.innerText = d.smart_routing_recommendation;
-            if(pct > 75) { pb.className='progress-bar bg-danger'; rb.style.borderColor='#ef4444'; rb.style.background='#fef2f2'; rt.style.color='#991b1b'; }
-            else if(pct > 45) { pb.className='progress-bar bg-warning'; rb.style.borderColor='#f59e0b'; rb.style.background='#fffbeb'; rt.style.color='#92400e'; }
-            else { pb.className='progress-bar bg-primary'; rb.style.borderColor='#2563eb'; rb.style.background='#eff6ff'; rt.style.color='#1e40af'; }
-        };
-    </script>
-</body></html>
-"""
+stack = load_ml_stack()
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template_string(DASHBOARD_UI)
-
-# --- SECTION 7 MANDATORY REST API ENDPOINTS ---
+    return render_template('index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """GET /api/health - System Health Check"""
     return jsonify({"status": "healthy", "model_active": True, "ensemble_weights": {"LightGBM": 0.55, "XGBoost": 0.45}}), 200
 
 @app.route('/api/segments', methods=['GET'])
 def segments():
-    """GET /api/segments - Fetch Infrastructure Segments"""
     return jsonify(ROAD_SEGMENTS_METADATA), 200
 
 @app.route('/api/analytics', methods=['GET'])
 def analytics():
-    """GET /api/analytics - Traffic Analytics Summary"""
     return jsonify(SYSTEM_STATS), 200
 
 @app.route('/api/predict', methods=['POST'])
 def predict():
-    """POST /api/predict - Real-time Single Segment Inference"""
     try:
         req = request.get_json()
         segment_id = int(req.get("segment_id", 101))
@@ -139,4 +54,51 @@ def predict():
         lag_2 = float(req.get("lag_2", 195.0))
         event = int(req.get("event_holiday", 0))
         
-        # Parse time-based elements from the picker component
+        dt_str = req.get("timestamp", "")
+        hour = int(dt_str.split('T')[1].split(':')[0]) if 'T' in dt_str else 10
+        is_peak = 1 if (7 <= hour <= 9 or 17 <= hour <= 19) else 0
+        
+        lanes = 4 if segment_id == 101 else 3 if segment_id == 102 else 2
+        weather = str(req.get("weather_state", "Clear Skies"))
+        
+        if stack and "lgb" in stack:
+            road_type = 1 if segment_id == 101 else 2
+            rainfall = 12.5 if "Storm" in weather else 4.2 if "Rain" in weather else 0.0
+            visibility = 1.5 if "Storm" in weather else 5.0 if "Rain" in weather else 10.0
+            w_imp = (rainfall * 5.0) + (10.0 - visibility) + 2.0
+            feats = {
+                "Road_Segment_ID": segment_id, "Road_Type": road_type, "Number_of_Lanes": lanes, "Speed_Limit": 80,
+                "Temperature": 26.0, "Humidity": 75.0, "Rainfall": rainfall, "Visibility": visibility, "Wind_Speed": 12.0,
+                "Nearby_POI_Density": 45.0, "Event_Holiday": event, "Peak_Hour_Indicator": is_peak, "Rush_Hour_Score": (is_peak * 3) + 2,
+                "Hour_Sin": np.sin(2 * np.pi * hour / 24.0), "Hour_Cos": np.cos(2 * np.pi * hour / 24.0),
+                "Day_Sin": 0.0, "Day_Cos": 1.0, "Month_Sin": 0.0, "Month_Cos": 1.0,
+                "Weather_Impact_Score": w_imp, "Weather_x_Hour": w_imp * hour,
+                "Lag_1": lag_1, "Lag_2": lag_2, "Lag_3": lag_2, "Lag_4": lag_2, "Lag_6": lag_2, "Lag_12": lag_2,
+                "Rolling_Mean_3": (lag_1 + lag_2) / 2.0, "Rolling_Std_3": 5.0, "Rolling_Mean_6": lag_2, "Rolling_Mean_12": lag_2, "Rolling_Mean_24": lag_2, "EMA": lag_1
+            }
+            df = pd.DataFrame([feats])[stack["feature_cols"]]
+            prediction = max(int(stack["meta"].predict(np.column_stack((stack["lgb"].predict(df), stack["xgb"].predict(df))))), 15)
+        else:
+            wmod = 1.25 if "Storm" in weather else 1.1 if "Rain" in weather else 1.0
+            base = ((lag_1 + lag_2) / 2.0) * wmod + (140.0 if is_peak else 0.0)
+            if event == 1: base += 160.0
+            prediction = max(int(base), 15)
+            
+        cap = lanes * 1500
+        prediction = min(prediction, cap)
+        pct = (prediction / cap) * 100.0
+        route = "🚨 High saturation. Divert traffic flow to secondary bypass routes immediately." if pct > 75 else "⚠️ Moderate volume building. Recommend micro-adjusting ramp timers." if pct > 45 else "✅ Traffic flowing smoothly within normal bounds."
+        
+        return jsonify({"predicted_vehicle_count": prediction, "pcu_equivalency": round(prediction * 1.15, 1), "surge_ceiling_buffer": max(cap - prediction, 0), "total_capacity": cap, "smart_routing_recommendation": route}), 200
+    except Exception as e: return jsonify({"error": str(e)}), 400
+
+@app.route('/api/batch_predict', methods=['POST'])
+def batch_predict():
+    try:
+        payload = request.get_json()
+        results = [{"segment_id": int(i.get("segment_id", 101)), "predicted_demand": int(float(i.get("lag_1", 200)) * 1.05)} for i in payload]
+        return jsonify({"batch_predictions": results, "processed_count": len(results)}), 200
+    except Exception as e: return jsonify({"error": str(e)}), 400
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
