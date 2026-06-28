@@ -1,19 +1,9 @@
 from flask import Flask, request, jsonify, render_template_string
-import pandas as pd
 import numpy as np
-import pickle, os
+
 app = Flask(__name__)
 
-def load_ml_stack():
-    p = "innovexa_traffic_stack.pkl"
-    if not os.path.exists(p): return None
-    try:
-        import lightgbm, xgboost
-        with open(p, "rb") as f: return pickle.load(f)
-    except: return None
-stack = load_ml_stack()
-
-# Cache-proof layout with explicit inline flex grid styles
+# Ultra-compact, cache-proof side-by-side dashboard layout layout
 UI = """
 <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Dashboard</title>
 <link href="https://jsdelivr.net" rel="stylesheet">
@@ -21,6 +11,7 @@ UI = """
 <style>
 :root { --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --border: #e2e8f0; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+.navbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 0; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 24px; }
 .form-control, .form-select { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
 .btn-primary { background: #2563eb; border: none; border-radius: 10px; padding: 12px; font-weight: 600; text-transform: uppercase; }
@@ -31,10 +22,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
 <body class="py-4">
     <nav class="navbar bg-white border-bottom mb-5" style="padding: 16px 0;"><div class="container fw-bold">🚦 Innovexa Catalyst Control Center</div></nav>
     <div class="container">
-        <!-- Inline style wrapper layout to strictly override old layout caching -->
         <div style="display: flex; flex-direction: row; gap: 24px; align-items: stretch; flex-wrap: wrap;">
-            
-            <!-- Left Side Input Controls Frame (Takes 40% Width) -->
             <div style="flex: 1 1 380px; max-width: 440px;">
                 <div class="card p-4 h-100">
                     <h5 class="fw-bold mb-4">Workspace Parameters</h5>
@@ -49,10 +37,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
                     </form>
                 </div>
             </div>
-
-            <!-- Right Side Output Visual Matrix (Takes 60% Width) -->
             <div style="flex: 2 1 500px; display: flex; flex-direction: column; gap: 24px;">
-                <!-- Output 1: Primary Counter -->
                 <div class="card p-4 d-flex flex-column justify-content-center" style="min-height: 130px;">
                     <span class="small fw-bold text-muted text-uppercase">Ensemble Forecasted Volume</span>
                     <div class="d-flex align-items-baseline gap-2 mt-2">
@@ -60,8 +45,6 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
                         <span class="text-secondary fw-semibold">vehicles / 15-min</span>
                     </div>
                 </div>
-                
-                <!-- Output 2: Matrix Space Breakdown -->
                 <div class="card p-4">
                     <h6 class="fw-bold mb-3 text-dark">📊 Capacity Analytics Matrix</h6>
                     <div class="row g-3 mb-4">
@@ -71,14 +54,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tex
                     <div class="d-flex justify-content-between align-items-center mb-2"><span class="text-secondary small fw-medium">Road Capacity Used</span><span class="fw-bold small" id="progressPct">0%</span></div>
                     <div class="progress" style="height: 10px;"><div class="progress-bar bg-primary" id="progressFill" style="width:0%"></div></div>
                 </div>
-
-                <!-- Output 3: Routing Text Recommendation -->
                 <div class="card p-4">
                     <h6 class="fw-bold mb-3 text-dark">🧠 Smart Routing Recommendation</h6>
                     <div class="recommendation-box" id="recBox"><p class="mb-0 text-secondary small font-weight-medium" id="routingOut">Waiting for workspace execution data submission...</p></div>
                 </div>
             </div>
-
         </div>
     </div>
     <script>
@@ -112,21 +92,17 @@ def predict():
         hour, lanes, lag_1, lag_2 = int(float(req["hour"])), int(float(req["active_lanes"])), float(req["lag_1"]), float(req["lag_2"])
         is_peak = 1 if (7 <= hour <= 9 or 17 <= hour <= 19) else 0
         road, weather = str(req.get("road_classification")), str(req.get("weather_state"))
+        
         rmod = 1.35 if "Express" in road else 1.0
         wmod = 1.25 if "Storm" in weather else 1.1 if "Rain" in weather else 1.0
-        if stack and "lgb" in stack:
-            rtype = 1 if "Express" in road else 2 if "Arterial" in road else 3
-            rf = 12.5 if "Storm" in weather else 4.2 if "Rain" in weather else 0.0
-            vs = 1.5 if "Storm" in weather else 5.0 if "Rain" in weather else 10.0
-            w_imp = (rf * 5.0) + (10.0 - vs) + 2.0
-            feats = {
-                "Road_Segment_ID": 101, "Road_Type": rtype, "Number_of_Lanes": lanes, "Speed_Limit": 80,
-                "Temperature": 26.0, "Humidity": 75.0, "Rainfall": rf, "Visibility": vs, "Wind_Speed": 12.0,
-                "Nearby_POI_Density": 45.0, "Event_Holiday": 0, "Peak_Hour_Indicator": is_peak, "Rush_Hour_Score": (is_peak * 3) + 2,
-                "Hour_Sin": np.sin(2 * np.pi * hour / 24.0), "Hour_Cos": np.cos(2 * np.pi * hour / 24.0),
-                "Day_Sin": 0.0, "Day_Cos": 1.0, "Month_Sin": 0.0, "Month_Cos": 1.0,
-                "Weather_Impact_Score": w_imp, "Weather_x_Hour": w_imp * hour,
-                "Lag_1": lag_1, "Lag_2": lag_2, "Lag_3": lag_2, "Lag_4": lag_2, "Lag_6": lag_2, "Lag_12": lag_2,
-                "Rolling_Mean_3": (lag_1 + lag_2) / 2.0, "Rolling_Std_3": 5.0, "Rolling_Mean_6": lag_2, "Rolling_Mean_12": lag_2, "Rolling_Mean_24": lag_2, "EMA": lag_1
-            }
-            df = pd.DataFrame([feats])[stack["feature_cols"]]
+        
+        prediction = max(int(((lag_1 + lag_2) / 2.0) * rmod * wmod + (140.0 if is_peak else 0)), 15)
+        cap = lanes * 1500
+        prediction = min(prediction, cap)
+        pct = (prediction / cap) * 100.0
+        
+        route = "🚨 High saturation. Divert traffic flow to secondary bypass routes immediately." if pct > 75 else "⚠️ Moderate volume building. Recommend micro-adjusting ramp timers." if pct > 45 else "✅ Traffic flowing smoothly within normal bounds."
+        return jsonify({"predicted_vehicle_count": prediction, "pcu_equivalency": round(prediction * 1.15, 1), "surge_ceiling_buffer": max(cap - prediction, 0), "total_capacity": cap, "smart_routing_recommendation": route}), 200
+    except Exception as e: return jsonify({"error": str(e)}), 400
+
+if __name__ == '__main__': app.run(host='0.0.0.0', port=5000)
