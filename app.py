@@ -63,7 +63,6 @@ DASHBOARD_HTML = """
             border: 1px solid var(--border-color);
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .form-label {
@@ -82,12 +81,12 @@ DASHBOARD_HTML = """
             font-size: 0.95rem;
             color: var(--text-primary);
             background-color: #fff;
-            transition: border-color 0.15s ease;
         }
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            outline: none;
         }
 
         .btn-primary {
@@ -98,7 +97,6 @@ DASHBOARD_HTML = """
             font-weight: 600;
             font-size: 0.95rem;
             letter-spacing: 0.3px;
-            transition: background-color 0.15s ease;
         }
 
         .btn-primary:hover {
@@ -174,7 +172,7 @@ DASHBOARD_HTML = """
     <div class="container mb-5" style="max-width: 1140px;">
         <div class="row g-4">
             
-            <!-- Left Panel (Inputs) -->
+            <!-- Input Form Section -->
             <div class="col-lg-5">
                 <div class="card p-4 h-100">
                     <h5 class="fw-bold mb-4 text-dark">Workspace Parameters</h5>
@@ -218,11 +216,11 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
-            <!-- Right Panel (Outputs) -->
+            <!-- Output Panels Section -->
             <div class="col-lg-7">
                 <div class="d-flex flex-column h-100 justify-content-between gap-4">
                     
-                    <!-- Forecast Card -->
+                    <!-- Volume Output -->
                     <div class="card p-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <span class="metric-title">Ensemble Forecasted Volume</span>
                         <div class="d-flex align-items-baseline gap-2 mt-1">
@@ -231,7 +229,7 @@ DASHBOARD_HTML = """
                         </div>
                     </div>
 
-                    <!-- Matrix Card -->
+                    <!-- Analytics Matrix -->
                     <div class="card p-4">
                         <h6 class="fw-bold mb-3 d-flex align-items-center text-dark">
                             <span class="me-2 fs-5">📊</span> Capacity Analytics Matrix
@@ -255,5 +253,5 @@ DASHBOARD_HTML = """
                             <span class="text-secondary small fw-medium">Capacity Utilization Threshold</span>
                             <span class="fw-bold small" id="progressPct">0%</span>
                         </div>
-
+                        <div class="progress">
 
