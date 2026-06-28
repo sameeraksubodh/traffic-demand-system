@@ -83,10 +83,10 @@ PREMIUM_UI = """
                     <div class="card p-4">
                         <h6 class="fw-bold mb-3 text-dark">📊 Capacity Analytics Matrix</h6>
                         <div class="row g-2 mb-3">
-                            <div class="col-6"><div class="nested-metric"><small class="text-muted text-uppercase fw-bold" style="font-size:0.75rem;">PCU Equivalency</small><div class="fw-bold fs-5 mt-1" id="pcuOut">0</div></div></div>
-                            <div class="col-6"><div class="nested-metric"><small class="text-muted text-uppercase fw-bold" style="font-size:0.75rem;">Surge Ceiling Buffer</small><div class="fw-bold fs-5 mt-1" id="bufferOut">0</div></div></div>
+                            <div class="col-6"><div class="nested-metric"><small class="text-muted text-uppercase fw-bold" style="font-size:0.75rem;">Equivalent Car Space</small><div class="fw-bold fs-5 mt-1" id="pcuOut">0</div></div></div>
+                            <div class="col-6"><div class="nested-metric"><small class="text-muted text-uppercase fw-bold" style="font-size:0.75rem;">Remaining Road Space</small><div class="fw-bold fs-5 mt-1" id="bufferOut">0</div></div></div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-1"><span class="text-secondary small fw-medium">Capacity Utilization</span><span class="fw-bold small" id="progressPct">0%</span></div>
+                        <div class="d-flex justify-content-between align-items-center mb-1"><span class="text-secondary small fw-medium">Road Capacity Used</span><span class="fw-bold small" id="progressPct">0%</span></div>
                         <div class="progress" style="height:8px;"><div class="progress-bar bg-primary" id="progressFill" style="width:0%"></div></div>
                     </div>
                     <div class="card p-4">
