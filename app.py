@@ -32,11 +32,10 @@ def predict():
         if not req:
             return jsonify({"error": "Empty payload received"}), 400
 
-        # 1. ROBUST STRUCTURAL TYPE PARSING & FALLBACKS
+        # 1. Parse core form types with direct numerical conversion bounds
         hour = int(req.get("hour", 10))
         lanes = int(req.get("active_lanes", 4))
         
-        # Safely extract dynamic floats
         try:
             lag_1 = float(req.get("lag_1", 210.0))
         except (ValueError, TypeError):
@@ -47,24 +46,29 @@ def predict():
         except (ValueError, TypeError):
             lag_2 = 195.0
 
-        # 2. EVALUATE RUSH INDICES
+        # 2. Evaluate peak rush-hour flags
         is_peak = 1 if (7 <= hour <= 9 or 17 <= hour <= 19) else 0
 
-        # 3. CONVERT FRONTEND TEXT SELECTIONS TO NUMERIC MODIFIERS
+        # 3. Synchronize frontend dropdown option string mappings
         road_classification = req.get("road_classification", "Express Highway")
-        road_type_map = {"Express Highway": 1, "Arterial Route": 2, "Urban Commuter Route": 3}
+        road_type_map = {
+            "Express Highway": 1, 
+            "Arterial Route": 2, 
+            "Urban Commuter Route": 3,
+            "Urban Commuter": 3
+        }
         road_type = road_type_map.get(road_classification, 2)
-        road_mod = 1.25 if road_classification == "Express Highway" else 1.0
+        road_mod = 1.25 if "Express" in road_classification else 1.0
 
         weather_state = req.get("weather_state", "Clear Skies")
-        if weather_state == "Heavy Storms":
+        if "Storm" in weather_state:
             rainfall, visibility, weather_mod = 12.5, 1.5, 1.3
-        elif weather_state == "Active Rainfall":
+        elif "Rain" in weather_state:
             rainfall, visibility, weather_mod = 4.2, 5.0, 1.1
         else:
             rainfall, visibility, weather_mod = 0.0, 10.0, 1.0
 
-        # 4. EXECUTE PROCESSING MACHINE LEARNING PIPELINE VS FALLBACK
+        # 4. Pipeline execution engine
         if stack and "lgb" in stack:
             weather_impact = (rainfall * 5.0) + (10.0 - visibility) + 2.0
             feats = {
@@ -85,7 +89,7 @@ def predict():
                 base_demand += 140.0
             prediction = max(int(base_demand), 15)
 
-        # 5. GENERATE STRUCTURAL FORECAST MATRIX OUTPUTS
+        # 5. Populate structural forecast outputs
         theoretical_capacity = lanes * 1500  
         surge_buffer = max(theoretical_capacity - prediction, 0)
         pct = (prediction / theoretical_capacity) * 100.0
