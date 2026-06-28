@@ -14,7 +14,7 @@ if os.path.exists(ARTIFACT_PATH):
 else:
     stack = None
 
-# --- PREMIUM STYLED DASHBOARD UI ---
+# --- HTML/JS UI (NO RAW ARRAYS TO PREVENT SYNTAX STRIPPING) ---
 DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -155,7 +155,6 @@ DASHBOARD_HTML = """
     <div class="container mb-5" style="max-width: 1140px;">
         <div class="row g-4">
             
-            <!-- Input Form Section -->
             <div class="col-lg-5">
                 <div class="card p-4 h-100">
                     <h5 class="fw-bold mb-4 text-dark">Workspace Parameters</h5>
@@ -199,11 +198,9 @@ DASHBOARD_HTML = """
                 </div>
             </div>
 
-            <!-- Output Panels Section -->
             <div class="col-lg-7">
                 <div class="d-flex flex-column h-100 justify-content-between gap-4">
                     
-                    <!-- Volume Output -->
                     <div class="card p-4 flex-grow-1 d-flex flex-column justify-content-center">
                         <span class="metric-title">Ensemble Forecasted Volume</span>
                         <div class="d-flex align-items-baseline gap-2 mt-1">
@@ -212,7 +209,6 @@ DASHBOARD_HTML = """
                         </div>
                     </div>
 
-                    <!-- Analytics Matrix -->
                     <div class="card p-4">
                         <h6 class="fw-bold mb-3 d-flex align-items-center text-dark">
                             <span class="me-2 fs-5">📊</span> Capacity Analytics Matrix
@@ -238,7 +234,7 @@ DASHBOARD_HTML = """
                         </div>
                         <div class="progress">
                             <div class="progress-bar" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
 
- 
-     
-  
+                    <div class="card p-4">
