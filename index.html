@@ -142,7 +142,7 @@
                 <span class="me-2">🚦</span> Innovexa Catalyst Control Center
             </span>
             <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 fw-semibold rounded-pill">
-                ● Active Stream Analytics Online
+                ● Live Streaming Active
             </span>
         </div>
     </nav>
@@ -156,11 +156,11 @@
                     <form id="trafficForm" class="row g-3">
                         <div class="col-12">
                             <label class="form-label">Hour of Day (0-23)</label>
-                            <input type="number" class="form-control" name="hour" min="0" max="23" value="10" required>
+                            <input type="number" class="form-control" id="hourInput" value="10" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Road Classification</label>
-                            <select class="form-select" name="road_classification">
+                            <select class="form-select" id="roadInput">
                                 <option value="Express Highway">Express Highway</option>
                                 <option value="Arterial Route">Arterial Route</option>
                                 <option value="Urban Commuter Route">Urban Commuter Route</option>
@@ -168,11 +168,11 @@
                         </div>
                         <div class="col-12">
                             <label class="form-label">Active Lanes</label>
-                            <input type="number" class="form-control" name="active_lanes" min="1" max="10" value="4" required>
+                            <input type="number" class="form-control" id="lanesInput" value="4" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Weather State</label>
-                            <select class="form-select" name="weather_state">
+                            <select class="form-select" id="weatherInput">
                                 <option value="Clear Skies">Clear Skies</option>
                                 <option value="Active Rainfall">Active Rainfall</option>
                                 <option value="Heavy Storms">Heavy Storms</option>
@@ -180,11 +180,11 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label">Lag 1 Volume (T-15m)</label>
-                            <input type="number" class="form-control" name="lag_1" value="210" required>
+                            <input type="number" class="form-control" id="lag1Input" value="210" required>
                         </div>
                         <div class="col-6">
                             <label class="form-label">Lag 2 Volume (T-30m)</label>
-                            <input type="number" class="form-control" name="lag_2" value="195" required>
+                            <input type="number" class="form-control" id="lag2Input" value="195" required>
                         </div>
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-primary w-100">Execute Stacking Ensemble</button>
@@ -230,7 +230,7 @@
                     <div class="section-title">🧠 Smart Routing Recommendation</div>
                     <div class="recommendation-box" id="recBox">
                         <p class="mb-0 text-secondary" id="routingOut">
-                            System idle. Submit workspace parameters to initialize recommendations...
+                            System idle. Submit parameters to compute live recommendations...
                         </p>
                     </div>
                 </div>
@@ -242,6 +242,7 @@
     <script>
         document.getElementById('trafficForm').onsubmit = async (e) => {
             e.preventDefault();
-            const payload = Object.fromEntries(new FormData(e.target).entries());
             
-            const res = await fetch('/api/predict', { 
+            // Hardcoded direct payload construction mapping
+            const payload = {
+                hour: document.getElementById('hourInput').value,
