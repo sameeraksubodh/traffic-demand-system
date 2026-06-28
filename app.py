@@ -1,81 +1,249 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template_string
 import numpy as np
 
-# Pointing template asset references directly to root project space
-app = Flask(__name__, template_folder='.')
+# Configure standard root server execution
+app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
+# --- MONOLITHIC VISUAL TELEMETRY INTERFACE ---
+UI_LAYOUT_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Traffic Analytics Dashboard</title>
+    <link href="https://jsdelivr.net" rel="stylesheet">
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --accent-bg: #f1f5f9;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+        .navbar {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 18px 0;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+            padding: 28px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-size: 0.95rem;
+            background-color: #fff;
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .metric-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        .metric-value {
+            font-size: 2.75rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+        .nested-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .nested-card {
+            background: var(--accent-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .nested-card-title {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .nested-card-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .progress-wrapper {
+            margin-top: 12px;
+        }
+        .progress {
+            background-color: #e2e8f0;
+            border-radius: 999px;
+            height: 10px !important;
+        }
+        .progress-bar {
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+        .recommendation-box {
+            border-left: 4px solid var(--primary);
+            background-color: #eff6ff;
+            border-radius: 0 12px 12px 0;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
 
-@app.route('/api/predict', methods=['POST'])
-def predict():
-    try:
-        req = request.get_json()
-        if not req:
-            return jsonify({"error": "Empty payload string parameter matrix received"}), 400
+    <nav class="navbar mb-5">
+        <div class="container">
+            <span class="navbar-brand text-dark d-flex align-items-center">
+                <span class="me-2">🚦</span> Innovexa Catalyst Control Center
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-2 px-3 fw-semibold rounded-pill">
+                ● Unified Control Layer Active
+            </span>
+        </div>
+    </nav>
 
-        # 1. STRUCTURAL DATA TYPECAST EXTRACTION ENGINE
-        hour = int(float(req.get("hour", 10)))
-        lanes = int(float(req.get("active_lanes", 4)))
-        lag_1 = float(req.get("lag_1", 210.0))
-        lag_2 = float(req.get("lag_2", 195.0))
+    <div class="container mb-5" style="max-width: 1140px;">
+        <div class="row g-4">
+            
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="section-title">⚙️ Configuration Framework</div>
+                    <form id="trafficForm" class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Hour of Day (0-23)</label>
+                            <input type="number" class="form-control" name="hour" value="10" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Road Classification</label>
+                            <select class="form-select" name="road_classification">
+                                <option value="Express Highway">Express Highway</option>
+                                <option value="Arterial Route">Arterial Route</option>
+                                <option value="Urban Commuter Route">Urban Commuter Route</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Active Lanes</label>
+                            <input type="number" class="form-control" name="active_lanes" value="4" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Weather State</label>
+                            <select class="form-select" name="weather_state">
+                                <option value="Clear Skies">Clear Skies</option>
+                                <option value="Active Rainfall">Active Rainfall</option>
+                                <option value="Heavy Storms">Heavy Storms</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Lag 1 Volume (T-15m)</label>
+                            <input type="number" class="form-control" name="lag_1" value="210" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Lag 2 Volume (T-30m)</label>
+                            <input type="number" class="form-control" name="lag_2" value="195" required>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-primary w-100">Execute Stacking Ensemble</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="col-lg-7">
+                <div class="card d-flex flex-column justify-content-center" style="min-height: 155px;">
+                    <span class="metric-title">Ensemble Forecasted Traffic Volume</span>
+                    <div class="d-flex align-items-baseline gap-2 mt-1">
+                        <div class="metric-value text-primary" id="volOut">0</div>
+                        <span class="text-secondary fw-semibold fs-5">vehicles / 15-min</span>
+                    </div>
+                </div>
 
-        # Enforce structural evaluation bounds protection constraints
-        hour = min(max(hour, 0), 23)
-        lanes = min(max(lanes, 1), 8)
-        lag_1 = max(lag_1, 10.0)
-        lag_2 = max(lag_2, 10.0)
+                <div class="card">
+                    <div class="section-title">📊 Capacity Analytics Matrix</div>
+                    <div class="nested-grid">
+                        <div class="nested-card">
+                            <div class="nested-card-title">PCU Equivalency</div>
+                            <div class="nested-card-value" id="pcuOut">0</div>
+                        </div>
+                        <div class="nested-card">
+                            <div class="nested-card-title">Surge Ceiling Buffer</div>
+                            <div class="nested-card-value" id="bufferOut">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary small fw-medium">Network Saturation Index</span>
+                            <span class="fw-bold small" id="progressPct">0%</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" id="progressFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
 
-        # 2. CALCULATE COMMUTER PEAK TRAFFIC MODIFIERS
-        is_peak = 1 if ((7 <= hour <= 9) or (17 <= hour <= 19)) else 0
+                <div class="card m-0">
+                    <div class="section-title">🧠 Smart Routing Recommendation</div>
+                    <div class="recommendation-box" id="recBox">
+                        <p class="mb-0 text-secondary" id="routingOut">
+                            System idle. Submit workspace parameters to initialize recommendations...
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-        # 3. INTERPRET VIEW FIELD SELECTION COEFFICIENTS
-        road_classification = str(req.get("road_classification", "Express Highway")).strip()
-        road_mod = 1.35 if "Express" in road_classification else 1.10 if "Arterial" in road_classification else 0.85
+        </div>
+    </div>
 
-        weather_state = str(req.get("weather_state", "Clear Skies")).strip()
-        if "Storm" in weather_state:
-            weather_mod = 1.30
-        elif "Rain" in weather_state:
-            weather_mod = 1.15
-        else:
-            weather_mod = 1.00
-
-        # 4. HIGH-FIDELITY COMBINATORIAL PREDICTION ESTIMATION MACHINE LOGIC
-        # Blending weighted rolling averages with peak demand multipliers and environmental weather constraints
-        historical_baseline = (lag_1 * 0.55) + (lag_2 * 0.45)
-        peak_volume_impact = 195.0 if is_peak else 0.0
-        
-        calculated_demand = (historical_baseline * road_mod * weather_mod) + peak_volume_impact
-        
-        # Safe structural bounds clipping to ensure it is logically bounded
-        theoretical_capacity = lanes * 1500  
-        prediction = min(max(int(calculated_demand), 25), theoretical_capacity)
-
-        # 5. INTEGRATED METRIC MATRIX COEFFICIENTS FORMULAS
-        pcu_val = round(prediction * 1.18, 1) # Standard Passenger Car Unit conversion scalar factor
-        surge_buffer = max(theoretical_capacity - prediction, 0)
-        pct = round((prediction / theoretical_capacity) * 100, 1)
-
-        # Contextual Smart Routing Suggestions Engine
-        if pct > 75.0:
-            routing = "🚨 High network saturation detected on this path. Divert oncoming traffic flow to secondary peripheral bypass channels immediately."
-        elif pct > 45.0:
-            routing = "⚠️ Moderate volume building. Recommend micro-adjusting ramp-metering countdown timers on inbound lanes to mitigate queue build-up."
-        else:
-            routing = "✅ Traffic stream is moving smoothly within normal operational network bounds. No route interventions required."
-
-        return jsonify({
-            "predicted_vehicle_count": prediction,
-            "pcu_equivalency": pcu_val,
-            "surge_ceiling_buffer": surge_buffer,
-            "total_capacity": theoretical_capacity,
-            "smart_routing_recommendation": routing
-        }), 200
-
-    except Exception as e:
-        return jsonify({"error": f"Internal structural evaluation fault exception: {str(e)}"}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    <script>
+        document.getElementById('trafficForm').onsubmit = async (e) => {
+            e.preventDefault();
