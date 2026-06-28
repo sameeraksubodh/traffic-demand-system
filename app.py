@@ -149,8 +149,9 @@ def predict():
         road_type_map = {"Express Highway": 1, "Arterial Route": 2, "Urban Commuter": 3}
         road_type = road_type_map.get(req["road_classification"], 2)
         
-        rainfall = 0.0 if req["weather_state"] == "Clear Skies" else 4.2 if req["weather_state"] == "Active Rainfall" else 12.5
-        visibility = 10.0 if req["weather_state"] == "Clear Skies" else 5.0 if req["weather_state"] == "Active Rainfall" else 1.5
+        weather_state = req.get("weather_state", "Clear Skies")
+        rainfall = 0.0 if weather_state == "Clear Skies" else 4.2 if weather_state == "Active Rainfall" else 12.5
+        visibility = 10.0 if weather_state == "Clear Skies" else 5.0 if weather_state == "Active Rainfall" else 1.5
         
         hour = int(req["hour"])
         lanes = int(req["active_lanes"])
@@ -159,7 +160,7 @@ def predict():
         
         # 2. Build feature values array for pipeline inference execution
         weather_impact = (rainfall * 5) + (10 - visibility) + 2.0
-        peak_hour = 1 if hour in else 0
+        peak_hour = 1 if hour in [7, 8, 9, 17, 18, 19] else 0
         rush_score = peak_hour * 3 + 2
         
         feats = {
@@ -198,5 +199,5 @@ def predict():
         return jsonify({
             "predicted_vehicle_count": prediction,
             "pcu_equivalency": pcu_val,
-            "surge_ceiling_buffer": surge_buffer,
+
 
