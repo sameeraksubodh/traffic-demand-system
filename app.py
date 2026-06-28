@@ -237,3 +237,8 @@ DASHBOARD_HTML = """
                         </div>
                         <div class="progress">
                             <div class="progress-bar bg-primary" id="progressFill" style="width: 0%"></div>
+</body>
+</html>
+"""
+                            
+                            
