@@ -37,34 +37,29 @@ DASHBOARD_HTML = """
             --warning: #f59e0b;
             --danger: #ef4444;
         }
-        
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
         }
-
         .navbar {
             background-color: var(--surface);
             border-bottom: 1px solid var(--border-color);
             padding: 16px 0;
         }
-
         .navbar-brand {
             font-weight: 700;
             color: var(--text-primary) !important;
             letter-spacing: -0.5px;
             font-size: 1.25rem;
         }
-
         .card {
             background: var(--surface);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
-
         .form-label {
             font-weight: 600;
             font-size: 0.85rem;
@@ -73,7 +68,6 @@ DASHBOARD_HTML = """
             color: var(--text-secondary);
             margin-bottom: 6px;
         }
-
         .form-control, .form-select {
             border: 1px solid var(--border-color);
             border-radius: 10px;
@@ -82,13 +76,11 @@ DASHBOARD_HTML = """
             color: var(--text-primary);
             background-color: #fff;
         }
-
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
             outline: none;
         }
-
         .btn-primary {
             background-color: var(--primary);
             border: none;
@@ -98,11 +90,9 @@ DASHBOARD_HTML = """
             font-size: 0.95rem;
             letter-spacing: 0.3px;
         }
-
         .btn-primary:hover {
             background-color: var(--primary-hover);
         }
-
         .metric-title {
             font-size: 0.8rem;
             font-weight: 700;
@@ -110,44 +100,37 @@ DASHBOARD_HTML = """
             letter-spacing: 1px;
             color: var(--text-secondary);
         }
-
         .metric-value {
             font-size: 2.5rem;
             font-weight: 700;
             letter-spacing: -1px;
             color: var(--text-primary);
         }
-
         .nested-metric {
             background: #f8fafc;
             border-radius: 12px;
             padding: 16px;
             border: 1px solid var(--border-color);
         }
-
         .nested-metric-label {
             font-size: 0.85rem;
             color: var(--text-secondary);
             font-weight: 500;
         }
-
         .nested-metric-value {
             font-size: 1.15rem;
             font-weight: 700;
             color: var(--text-primary);
         }
-
         .progress {
             background-color: #f1f5f9;
             border-radius: 999px;
             height: 8px !important;
         }
-
         .progress-bar {
             background-color: var(--primary);
             border-radius: 999px;
         }
-
         .recommendation-box {
             border-left: 4px solid var(--primary);
             background-color: #eff6ff;
@@ -254,4 +237,8 @@ DASHBOARD_HTML = """
                             <span class="fw-bold small" id="progressPct">0%</span>
                         </div>
                         <div class="progress">
+                            <div class="progress-bar" id="progressFill" style="width: 0%"></div>
 
+ 
+     
+  
