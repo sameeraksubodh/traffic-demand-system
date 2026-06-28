@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-import datetime
 
 app = Flask(__name__)
 
@@ -15,7 +14,7 @@ if os.path.exists(ARTIFACT_PATH):
 else:
     stack = None
 
-# --- HTML/JS INTERACTIVE UI (Matches Your Reference Image Exactly) ---
+# --- HTML/JS INTERACTIVE UI ---
 DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -116,17 +115,14 @@ DASHBOARD_HTML = """
             });
             const data = await res.json();
             
-            // Render outputs directly to dashboard positions
             document.getElementById('volOut').innerText = data.predicted_vehicle_count + " vehicles";
             document.getElementById('pcuOut').innerText = data.pcu_equivalency;
             document.getElementById('bufferOut').innerText = data.surge_ceiling_buffer;
             
-            // Calculate capacity visual bar width percentage
             const pct = Math.min(Math.round((data.predicted_vehicle_count / data.total_capacity) * 100), 100);
             document.getElementById('progressFill').style.width = pct + "%";
             document.getElementById('progressPct').innerText = pct + "%";
             
-            // Display smart routing suggestions contextually
             document.getElementById('routingOut').innerText = data.smart_routing_recommendation;
         };
     </script>
@@ -160,7 +156,8 @@ def predict():
         
         # 2. Build feature values array for pipeline inference execution
         weather_impact = (rainfall * 5) + (10 - visibility) + 2.0
-        peak_hour = 1 if hour in [7, 8, 9, 17, 18, 19] else 0
+        peak_hours_list = [7, 8, 9, 17, 18, 19]
+        peak_hour = 1 if hour in peak_hours_list else 0
         rush_score = peak_hour * 3 + 2
         
         feats = {
@@ -181,23 +178,33 @@ def predict():
         p_lgb = stack["lgb"].predict(df)
         p_xgb = stack["xgb"].predict(df)
         meta_in = np.column_stack((p_lgb, p_xgb))
-        prediction = max(int(stack["meta"].predict(meta_in)), 15) # Keep value natural and floor-capped
+        prediction = max(int(stack["meta"].predict(meta_in)), 15)
         
         # 4. Compute Interface Component Calculations Matrix
-        pcu_val = round(prediction * 1.15, 1) # Standard Passenger Car Unit conversion multiplier
-        theoretical_capacity = lanes * 1500  # 1500 vehicles per lane capacity standard
+        pcu_val = round(prediction * 1.15, 1)
+        theoretical_capacity = lanes * 1500  
         surge_buffer = max(theoretical_capacity - prediction, 0)
         
         # Contextual Smart Routing Suggestions Engine
         if prediction > (theoretical_capacity * 0.75):
-            routing = "🔴 High saturation detected on this path. Divert oncoming traffic flow to secondary peripheral bypass roads immediately."
+            routing = "High saturation detected on this path. Divert oncoming traffic flow to secondary peripheral bypass roads immediately."
         elif prediction > (theoretical_capacity * 0.45):
-            routing = "🟡 Moderate volume building. Recommend micro-adjusting ramp-metering timers on inbound lanes."
+            routing = "Moderate volume building. Recommend micro-adjusting ramp-metering timers on inbound lanes."
         else:
-            routing = "🟢 Traffic flowing smoothly within normal operational parameters. No route interventions required."
+            routing = "Traffic flowing smoothly within normal operational parameters. No route interventions required."
 
         return jsonify({
             "predicted_vehicle_count": prediction,
             "pcu_equivalency": pcu_val,
+            "surge_ceiling_buffer": surge_buffer,
+            "total_capacity": theoretical_capacity,
+            "smart_routing_recommendation": routing
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
 
 
