@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os
 
-# Point to root folder for HTML structure assets
+# Point to root folder for HTML template assets
 app = Flask(__name__, template_folder='.')
 
 def load_ml_stack():
@@ -32,25 +32,23 @@ def predict():
         if not req:
             return jsonify({"error": "Empty payload received"}), 400
 
-        # 1. Parse core form types with direct numerical conversion bounds
-        hour = int(req.get("hour", 10))
-        lanes = int(req.get("active_lanes", 4))
-        
-        try:
-            lag_1 = float(req.get("lag_1", 210.0))
-        except (ValueError, TypeError):
-            lag_1 = 210.0
-            
-        try:
-            lag_2 = float(req.get("lag_2", 195.0))
-        except (ValueError, TypeError):
-            lag_2 = 195.0
+        # 1. ENFORCE STRICT SERVER-SIDE TYPECASTING (Fixes the Silent Mismatch Mismatch)
+        hour = int(float(req.get("hour", 10)))
+        lanes = int(float(req.get("active_lanes", 4)))
+        lag_1 = float(req.get("lag_1", 210.0))
+        lag_2 = float(req.get("lag_2", 195.0))
 
-        # 2. Evaluate peak rush-hour flags
+        # Enforce realistic bounds to protect model arrays from math scaling failure
+        hour = min(max(hour, 0), 23)
+        lanes = min(max(lanes, 1), 8)
+        lag_1 = max(lag_1, 0.0)
+        lag_2 = max(lag_2, 0.0)
+
+        # 2. EVALUATE TRAFFIC PEAK HOUR INDICES
         is_peak = 1 if (7 <= hour <= 9 or 17 <= hour <= 19) else 0
 
-        # 3. Synchronize frontend dropdown option string mappings
-        road_classification = req.get("road_classification", "Express Highway")
+        # 3. CONVERT FRONTEND OPTION CHOICES TO SYSTEM COEFFICIENTS
+        road_classification = str(req.get("road_classification", "Express Highway")).strip()
         road_type_map = {
             "Express Highway": 1, 
             "Arterial Route": 2, 
@@ -58,18 +56,18 @@ def predict():
             "Urban Commuter": 3
         }
         road_type = road_type_map.get(road_classification, 2)
-        road_mod = 1.25 if "Express" in road_classification else 1.0
+        road_mod = 1.35 if "Express" in road_classification else 1.0
 
-        weather_state = req.get("weather_state", "Clear Skies")
+        weather_state = str(req.get("weather_state", "Clear Skies")).strip()
         if "Storm" in weather_state:
-            rainfall, visibility, weather_mod = 12.5, 1.5, 1.3
+            rainfall, visibility, weather_mod = 12.5, 1.5, 1.25
         elif "Rain" in weather_state:
-            rainfall, visibility, weather_mod = 4.2, 5.0, 1.1
+            rainfall, visibility, weather_mod = 4.2, 5.0, 1.12
         else:
             rainfall, visibility, weather_mod = 0.0, 10.0, 1.0
 
-        # 4. Pipeline execution engine
-        if stack and "lgb" in stack:
+        # 4. INFERENCE EXECUTION BLOCK (Ensembles Stacking Predictions vs Robust Math Equations)
+        if stack and "lgb" in stack and hasattr(stack, "feature_cols"):
             weather_impact = (rainfall * 5.0) + (10.0 - visibility) + 2.0
             feats = {
                 "Road_Segment_ID": 101, "Road_Type": road_type, "Number_of_Lanes": lanes, "Speed_Limit": 80,
@@ -84,33 +82,38 @@ def predict():
             df = pd.DataFrame([feats])[stack["feature_cols"]]
             prediction = max(int(stack["meta"].predict(np.column_stack((stack["lgb"].predict(df), stack["xgb"].predict(df))))), 15)
         else:
-            base_demand = ((lag_1 + lag_2) / 2.0) * road_mod * weather_mod
-            if is_peak:
-                base_demand += 140.0
-            prediction = max(int(base_demand), 15)
+            # High-Fidelity Math Fallback calculation engine logic
+            historical_base = (lag_1 * 0.6) + (lag_2 * 0.4)
+            peak_multiplier = 185 if is_peak else 0
+            raw_calculated_volume = (historical_base * road_mod * weather_mod) + peak_multiplier
+            prediction = max(int(raw_calculated_volume), 25)
 
-        # 5. Populate structural forecast outputs
+        # 5. INTEGRATE ANALYTICS MATRIX SYSTEM CALCULATIONS
         theoretical_capacity = lanes * 1500  
+        prediction = min(prediction, theoretical_capacity) # Cap demand by physical lane capacity max limits
+        
+        pcu_val = round(prediction * 1.18, 1) # Standard Passenger Car Unit passenger vehicle conversion
         surge_buffer = max(theoretical_capacity - prediction, 0)
-        pct = (prediction / theoretical_capacity) * 100.0
+        pct = round((prediction / theoretical_capacity) * 100, 1)
 
         if pct > 75.0:
-            routing = "🚨 High network saturation detected on this corridor. Divert oncoming vehicle streams to secondary peripheral bypass channels immediately."
+            routing = "🚨 High saturation detected on this path. Divert oncoming traffic flow to secondary peripheral bypass roads immediately."
         elif pct > 45.0:
-            routing = "⚠️ Moderate volume build-up observed. Recommend micro-adjusting inbound ramp-metering countdown timers to mitigate localized queue delays."
+            routing = "⚠️ Moderate volume building. Recommend micro-adjusting ramp-metering timers on inbound lanes."
         else:
-            routing = "✅ Traffic stream is moving smoothly within standard operational network bounds. No structural route interventions required."
+            routing = "✅ Traffic flowing smoothly within normal operational parameters. No route interventions required."
 
         return jsonify({
             "predicted_vehicle_count": prediction,
-            "pcu_equivalency": round(prediction * 1.15, 1),
+            "pcu_equivalency": pcu_val,
             "surge_ceiling_buffer": surge_buffer,
             "total_capacity": theoretical_capacity,
             "smart_routing_recommendation": routing
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        # Avoid zero blank silences; send exact execution error context to web console tools
+        return jsonify({"error": f"Internal execution crash fault: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
